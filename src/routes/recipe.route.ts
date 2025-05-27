@@ -1,5 +1,6 @@
 // src/routes/recipe.route.ts
 import express from 'express';
+import upload from '~/middlewares/upload'; 
 import {
   createRecipe,
   getAllRecipes,
@@ -13,7 +14,7 @@ import {
 } from '~/controllers/recipe.controller';
 
 const router = express.Router();
-
+router.post('/', upload.single('image'), createRecipe); 
 router.post('/', createRecipe);
 router.get('/', getAllRecipes);
 router.get('/categories', getAllCategories);

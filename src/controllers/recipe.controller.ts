@@ -1,9 +1,22 @@
 import { Request, Response } from 'express';
+import { cloudinary } from '~/config/cloudinary';
 import Recipe from '~/models/Recipe';
-
 export const createRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const recipe = new Recipe(req.body);
+    let imageUrl = '';
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'recipes',
+      });
+      imageUrl = result.secure_url; 
+    }
+
+    const recipe = new Recipe({
+      ...req.body,
+      imageUrl,
+    });
+
     const saved = await recipe.save();
     res.status(201).json(saved);
   } catch (err) {
