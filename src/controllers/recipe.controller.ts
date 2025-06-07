@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { cloudinary } from '~/config/cloudinary';
 import Recipe from '~/models/Recipe';
+
+
 export const createRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
     let imageUrl = '';
@@ -12,18 +14,40 @@ export const createRecipe = async (req: Request, res: Response): Promise<void> =
       imageUrl = result.secure_url; 
     }
 
-    const recipe = new Recipe({
+    let categoryData: { _id: string; name: string; description: string } | null = null;
+    if (req.body.category) {
+      try {
+        categoryData = JSON.parse(req.body.category);
+      } catch (e) {
+        console.error('Lỗi phân tích category:', e);
+        res.status(400).json({ message: 'Dữ liệu category không hợp lệ' });
+        return;
+      }
+    }
+
+    // Tạo đối tượng recipe
+    const recipeData = {
       ...req.body,
       imageUrl,
-    });
+      categories: categoryData ? [{
+        _id: categoryData._id,
+        name: categoryData.name,
+        description: categoryData.description,
+      }] : [], // Lưu thông tin category đầy đủ
+    };
 
+    // Xóa category khỏi req.body để tránh xung đột
+    delete recipeData.category;
+    delete recipeData.categoryIds; // Đề phòng trường hợp cũ
+
+    const recipe = new Recipe(recipeData);
     const saved = await recipe.save();
+
     res.status(201).json(saved);
   } catch (err) {
     res.status(500).json({ message: 'Lỗi khi tạo recipe', error: err });
   }
 };
-
 export const getAllRecipes = async (_req: Request, res: Response): Promise<void> => {
   try {
     const recipes = await Recipe.find(); 
@@ -51,7 +75,16 @@ export const getRecipeById = async (req: Request, res: Response): Promise<void> 
 export const updateRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const updated = await Recipe.findByIdAndUpdate(id, req.body, { new: true });
+    let updatedData = { ...req.body };
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'recipes',
+      });
+      updatedData.imageUrl = result.secure_url;
+    }
+
+    const updated = await Recipe.findByIdAndUpdate(id, updatedData, { new: true });
     if (!updated) {
       res.status(404).json({ message: 'Recipe không tồn tại' });
       return;
@@ -61,7 +94,6 @@ export const updateRecipe = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ message: 'Lỗi khi cập nhật recipe', error: err });
   }
 };
-
 export const deleteRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
