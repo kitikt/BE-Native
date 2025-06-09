@@ -61,7 +61,7 @@ export const getAllRecipes = async (_req: Request, res: Response): Promise<void>
 export const getRecipeById = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const recipe = await Recipe.findById(id); 
+    const recipe = await Recipe.findById(id).populate('comments'); 
     if (!recipe) {
       res.status(404).json({ message: 'Không tìm thấy recipe' });
       return;

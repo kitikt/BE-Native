@@ -82,12 +82,17 @@ router.get('/categories', getAllCategories);
  *               difficulty:
  *                 type: string
  *                 enum: [Easy, Medium, Hard]
+ *               category:
+ *                 type: string
+ *                 description: JSON stringified category object {_id, name, description}
  *               image:
  *                 type: string
  *                 format: binary
  *     responses:
  *       201:
  *         description: Recipe created
+ *       400:
+ *         description: Invalid input data
  *       401:
  *         description: Unauthorized - token missing or invalid
  */
@@ -130,7 +135,7 @@ router.get('/:id', getRecipeById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -151,8 +156,9 @@ router.get('/:id', getRecipeById);
  *               difficulty:
  *                 type: string
  *                 enum: [Easy, Medium, Hard]
- *               imageUrl:
+ *               image:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Recipe updated
@@ -161,7 +167,7 @@ router.get('/:id', getRecipeById);
  *       404:
  *         description: Recipe not found
  */
-router.put('/:id', authenticate, isAdmin, updateRecipe);
+router.put('/:id', authenticate, isAdmin, upload.single('image'), updateRecipe);
 
 /**
  * @swagger
@@ -178,8 +184,8 @@ router.put('/:id', authenticate, isAdmin, updateRecipe);
  *         schema:
  *           type: string
  *     responses:
- *       204:
- *         description: Recipe deleted
+ *       200:
+ *         description: Recipe deleted successfully
  *       401:
  *         description: Unauthorized - token missing or invalid
  *       404:
@@ -208,13 +214,17 @@ router.delete('/:id', authenticate, isAdmin, deleteRecipe);
  *           schema:
  *             type: object
  *             required:
- *               - categoryName
+ *               - name
  *             properties:
- *               categoryName:
+ *               name:
+ *                 type: string
+ *               description:
  *                 type: string
  *     responses:
- *       200:
- *         description: Category added
+ *       201:
+ *         description: Category added to recipe
+ *       400:
+ *         description: Missing category name
  *       401:
  *         description: Unauthorized - token missing or invalid
  *       404:
@@ -247,10 +257,10 @@ router.post('/:id/categories', authenticate, isAdmin, addCategoryToRecipe);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - categoryName
  *             properties:
- *               categoryName:
+ *               name:
+ *                 type: string
+ *               description:
  *                 type: string
  *     responses:
  *       200:
@@ -260,7 +270,7 @@ router.post('/:id/categories', authenticate, isAdmin, addCategoryToRecipe);
  *       404:
  *         description: Recipe or Category not found
  */
-router.put('/:id/categories/:categoryId', authenticate, isAdmin,upload.single('image'), updateCategoryInRecipe);
+router.put('/:id/categories/:categoryId', authenticate, isAdmin, updateCategoryInRecipe);
 
 /**
  * @swagger
@@ -282,7 +292,7 @@ router.put('/:id/categories/:categoryId', authenticate, isAdmin,upload.single('i
  *         schema:
  *           type: string
  *     responses:
- *       204:
+ *       200:
  *         description: Category deleted
  *       401:
  *         description: Unauthorized - token missing or invalid

@@ -14,6 +14,7 @@ const RecipeSchema = new mongoose.Schema({
   calories : { type: Number, required : true },
   imageUrl : { type: String },
   categories : [CategorySchema],
+  comments : [{type: mongoose.Schema.Types.ObjectId, ref: 'Comment'}],
   createdAt : { type: Date, default : Date.now },
   difficulty : { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Easy' },
 });

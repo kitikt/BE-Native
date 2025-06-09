@@ -3,23 +3,31 @@ import jwt from "jsonwebtoken";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
+  console.log("Authorization header:", authHeader);
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    // phải return để dừng middleware và đảm bảo không tiếp tục gọi next()
-    res.status(401).json({ message: "No token provided" });
-    return;  // <=== thêm return này
+    res.status(401).json({ message: "Chưa cung cấp token" });
+    return;
   }
 
   const token = authHeader.split(" ")[1];
+  console.log("Token nhận được:", token);
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; username: string; role: "user" | "admin" };
-    // gán user vào req, cần khai báo type mở rộng cho req.user trong type.d.ts
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; username: string; role: "user" | "admin" };
+    console.log("Token giải mã:", decoded);
+    
+    // Ánh xạ userId thành id để đồng bộ với type và controller
+    req.user = {
+      id: decoded.userId,
+      username: decoded.username,
+      role: decoded.role
+    };
     console.log("Authenticated user:", req.user);
-    next(); // tiếp tục pipeline
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-    return; // <=== thêm return này
+    next();
+  } catch (err: any) {
+    console.error("Lỗi xác thực token:", err.message);
+    res.status(401).json({ message: "Token không hợp lệ: " + err.message });
+    return;
   }
 };
